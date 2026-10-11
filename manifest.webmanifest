@@ -1,0 +1,14 @@
+{
+  "id": "./",
+  "name": "Video Link Downloader",
+  "short_name": "Video Saver",
+  "description": "Preview and save videos from direct video links.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fc",
+  "theme_color": "#5855e7",
+  "icons": [
+    {"src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

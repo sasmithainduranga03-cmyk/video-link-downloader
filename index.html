@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#5855e7">
+<meta name="description" content="Preview and save videos from direct, downloadable video links.">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>Video Link Downloader</title>
+<style>
+:root{color-scheme:light;--ink:#182033;--muted:#69758a;--line:#e2e7f0;--accent:#5855e7;--bg:#f5f7fc}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f4f5ff,#f7f9fc 55%,#eef7ff);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+.wrap{width:min(760px,calc(100% - 28px));margin:36px auto}.hero{text-align:center;margin-bottom:25px}.logo{margin:0 auto 13px;width:60px;height:60px;border-radius:18px;background:#e8e7ff;color:var(--accent);display:grid;place-items:center;font-size:29px}
+h1{font-size:clamp(28px,5vw,40px);letter-spacing:-1px;margin:0 0 9px}.hero p{margin:0;color:var(--muted);line-height:1.6}
+.panel{background:white;border:1px solid var(--line);border-radius:22px;padding:clamp(18px,4vw,30px);box-shadow:0 18px 55px #29366b0d}
+label{display:block;font-weight:650;font-size:14px;margin-bottom:9px}.field{display:flex;gap:9px}.field input{flex:1;min-width:0;border:1px solid #d8deeb;border-radius:11px;padding:14px;font:inherit;outline:none}.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px #5855e71c}
+button{border:0;border-radius:11px;padding:13px 17px;font:inherit;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:white}.primary:hover{background:#4542c8}.secondary{background:#eef0f7;color:var(--ink)}button:disabled{opacity:.5;cursor:not-allowed}
+.hint{font-size:12px;color:var(--muted);margin:9px 0 0;line-height:1.5}.preview{display:none;margin-top:22px;border:1px solid var(--line);border-radius:15px;overflow:hidden;background:#101522}.preview video{display:block;width:100%;max-height:360px;background:#101522}.preview .details{background:white;padding:13px 15px;overflow-wrap:anywhere;font-size:13px;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:15px}.actions a{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;border-radius:11px;padding:12px 16px;font-weight:700;font-size:14px}.download{background:#16865c;color:white}.open{background:#eef0f7;color:var(--ink)}
+.status{font-size:13px;line-height:1.5;margin-top:16px;color:var(--muted);min-height:20px}.notice{margin-top:20px;padding:14px;border-radius:13px;background:#f6f7fb;color:#596478;font-size:12px;line-height:1.6}.notice strong{color:var(--ink)}footer{text-align:center;font-size:12px;color:var(--muted);margin-top:17px}.install{display:none;margin:0 auto 18px}
+@media(max-width:540px){.wrap{margin:25px auto}.field{flex-direction:column}.field button{width:100%}.actions a{flex:1}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="hero">
+<div class="logo" aria-hidden="true">▶</div>
+<h1>Video Link Downloader</h1>
+<p>Preview and save videos from direct, downloadable video links.</p>
+</header>
+<button id="installBtn" class="primary install" type="button">＋ Install app</button>
+<section class="panel">
+<label for="url">Paste a direct video URL</label>
+<div class="field">
+<input id="url" type="url" placeholder="https://example.com/video.mp4" autocomplete="url">
+<button id="previewBtn" class="primary" type="button">Load video</button>
+</div>
+<p class="hint">Direct video formats commonly include MP4, WebM and Ogg. Use a link you own or have permission to download.</p>
+<div id="preview" class="preview">
+<video id="video" controls playsinline preload="metadata"></video>
+<div class="details" id="details"></div>
+</div>
+<div class="actions" id="actions" hidden>
+<a id="download" class="download" href="#" download="video">↓ Download video</a>
+<a id="open" class="open" href="#" target="_blank" rel="noopener noreferrer">Open video link ↗</a>
+</div>
+<div class="status" id="status" role="status" aria-live="polite">Paste a direct video file URL to get started.</div>
+<div class="notice"><strong>Good to know</strong><br>This app runs in your browser and has no API key or custom downloader server. Some sites block previews or downloads, and a normal webpage link is not the same as a direct video file link. It does not bypass logins, paywalls, DRM, or platform restrictions. For videos on YouTube or other platforms, use the platform's official download/offline feature when available.</div>
+</section>
+<footer>Your link is handled by your browser. The app shell can open offline, but loading and downloading videos requires an internet connection.</footer>
+</main>
+<script>
+(() => {
+const urlInput=document.getElementById('url'), previewBtn=document.getElementById('previewBtn');
+const preview=document.getElementById('preview'), video=document.getElementById('video');
+const details=document.getElementById('details'), actions=document.getElementById('actions');
+const download=document.getElementById('download'), open=document.getElementById('open'), status=document.getElementById('status');
+function setStatus(s){status.textContent=s}
+function loadVideo(){
+ const raw=urlInput.value.trim(); let parsed;
+ try{parsed=new URL(raw)}catch{setStatus('Please paste a valid full URL starting with https:// or http://.');return}
+ if(!['http:','https:'].includes(parsed.protocol)){setStatus('Only http and https video links are supported.');return}
+ if(parsed.username||parsed.password){setStatus('For safety, URLs containing embedded login details are not supported.');return}
+ video.pause(); video.removeAttribute('src'); video.load();
+ preview.style.display='block'; actions.hidden=false; video.src=parsed.href;
+ download.href=parsed.href; download.download=(parsed.pathname.split('/').pop()||'video').split('?')[0]||'video';
+ open.href=parsed.href; details.textContent='Source: '+parsed.hostname+' · If preview fails, the host may block browser playback.';
+ setStatus('Trying to load preview…');
+}
+previewBtn.addEventListener('click',loadVideo);
+urlInput.addEventListener('keydown',e=>{if(e.key==='Enter')loadVideo()});
+video.addEventListener('loadedmetadata',()=>setStatus('Video loaded. Use Download video to save it if the source permits direct downloads.'));
+video.addEventListener('error',()=>setStatus('Preview could not load. The link may not be a direct video file, or the host may block browser access. Try opening the link directly.'));
+download.addEventListener('click',e=>{if(!video.src){e.preventDefault();setStatus('Load a video link first.');return}setStatus('Download requested. Some browsers or video hosts may open the video instead of saving it.')});
+let installPrompt;
+const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;installBtn.style.display='block'});
+installBtn.addEventListener('click',async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;installBtn.style.display='none'});
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')) {
+ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+})();
+</script>
+</body>
+</html>
